@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface Casilla {
   position: number;
@@ -21,22 +21,6 @@ export const Booscaminas = ({
       .sort(() => Math.random() - 0.5)
       .slice(0, pumpkins);
 
-    // Array.from({ length: pumpkins }, (_, i) => i).sort(
-    // () => Math.random() * (gridDimension * gridDimension),
-    // );
-
-    console.log(pumpkinsInitialState);
-    //   [
-    //   ...new Set(
-    //     Array(pumpkins)
-    //       .fill(0)
-    //       .map((_, i) => i),
-    //   ),
-    // ];
-    // new Array(pumpkins)
-    //   .fill(0)
-    //   .map(() => Math.floor(Math.random() * (gridDimension * gridDimension)));
-
     const initialGameState = new Array(gridDimension * gridDimension)
       .fill(0)
       .map((grid, position) => ({
@@ -44,42 +28,61 @@ export const Booscaminas = ({
         active: pumpkinsInitialState.includes(position),
       }));
 
-    return initialGameState;
+    return { initialGameState, pumpkins: pumpkinsInitialState };
   }, [gridDimension, pumpkins]);
 
-  // const [gameState, setGameState] = useState<Casilla[]>(initialGameState);
+  const [gameState, setGameState] = useState<{ initialGameState: Casilla[]; pumpkins: number[] }>(
+    initialGameState,
+  );
 
-  console.log([...initialGameState.filter((pump) => pump.active)]);
+  useEffect(() => {
+    setGameState(initialGameState);
+  }, [initialGameState]);
 
   const getSurroundingCells = useCallback(
-    ({ active, position }: Casilla) => {
-      console.log(position);
-      const topLine = [
-        position - gridDimension - 1,
-        position - gridDimension,
-        position - gridDimension + 1,
-      ];
+    (position: number) => {
+      const row = Math.floor(position / gridDimension);
+      const col = position % gridDimension;
 
-      const innerLine = [position - 1, position, position + 1];
+      const surrounding = [];
 
-      const bottomLine = [
-        position + gridDimension - 1,
-        position + gridDimension,
-        position + gridDimension + 1,
-      ];
+      for (let i = -1; i <= 1; i++) {
+        for (let j = -1; j <= 1; j++) {
+          if (i === 0 && j === 0) continue;
 
-      console.log([...topLine, ...innerLine, ...bottomLine].filter((num) => num > 0));
+          const newRow = row + i;
+          const newCol = col + j;
+          const newPos = newRow * gridDimension + newCol;
+
+          if (newRow >= 0 && newRow < gridDimension && newCol >= 0 && newCol < gridDimension) {
+            surrounding.push(newPos);
+          }
+        }
+      }
+
+      return surrounding;
     },
+
     [gridDimension],
   );
 
+  const handleClickCell = (cellNumber: number) => {
+    const surroundingCells = getSurroundingCells(cellNumber);
+
+    console.log(initialGameState, "initialGameState");
+    console.log(surroundingCells, "surrounding");
+    console.log(cellNumber, "cellNumber");
+
+    // const res = surroundingCells.some(r=> )
+  };
+
   return (
     <div className={`grid grid-cols-${gridDimension} gap-1`}>
-      {initialGameState.map((grid, i) => (
+      {gameState.initialGameState.map((grid, i) => (
         <div
           key={i}
           className={`flex justify-center items-center w-[50px] h-[50px] border border-orange-400 ${grid.active ? "bg-orange-400" : ""}`}
-          onClick={() => getSurroundingCells(grid)}
+          onClick={() => handleClickCell(grid.position)}
         >
           {grid.active} {grid.position}
         </div>
