@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface Casilla {
   position: number;
-  active: boolean;
+  isPumpkin: boolean;
+  activated: boolean;
+  nearPumpkins: number;
 }
 
 interface BooscaminasProp {
@@ -12,7 +14,7 @@ interface BooscaminasProp {
 }
 
 export const Booscaminas = ({
-  pumpkins = 10,
+  pumpkins = 20,
   enableFlags = false,
   gridDimension = 10,
 }: BooscaminasProp) => {
@@ -25,7 +27,9 @@ export const Booscaminas = ({
       .fill(0)
       .map((grid, position) => ({
         position,
-        active: pumpkinsInitialState.includes(position),
+        isPumpkin: pumpkinsInitialState.includes(position),
+        activated: false,
+        nearPumpkins: 0,
       }));
 
     return { initialGameState, pumpkins: pumpkinsInitialState };
@@ -66,25 +70,43 @@ export const Booscaminas = ({
     [gridDimension],
   );
 
-  const handleClickCell = (cellNumber: number) => {
-    const surroundingCells = getSurroundingCells(cellNumber);
+  function handleClick(position: number) {
+    // if (!initialGameState.pumpkins.includes(position)) {
+    // }
 
-    console.log(initialGameState, "initialGameState");
-    console.log(surroundingCells, "surrounding");
-    console.log(cellNumber, "cellNumber");
+    const newCells = { ...gameState };
 
-    // const res = surroundingCells.some(r=> )
-  };
+    function revealCell(pos: number, visited = new Set<number>(), grid: typeof initialGameState) {
+      if (visited.has(pos)) return;
+      visited.add(pos);
+
+      const surroundingCells = getSurroundingCells(pos);
+      const nearPumpkins = surroundingCells.filter((cell) => gameState.pumpkins.includes(cell));
+
+      grid.initialGameState[pos] = {
+        ...grid.initialGameState[pos],
+        activated: true,
+        nearPumpkins: nearPumpkins.length,
+      };
+
+      if (!nearPumpkins.length) {
+        surroundingCells.forEach((cell) => revealCell(cell, visited, newCells));
+      }
+    }
+
+    revealCell(position);
+    setGameState(newCells);
+  }
 
   return (
     <div className={`grid grid-cols-${gridDimension} gap-1`}>
       {gameState.initialGameState.map((grid, i) => (
         <div
           key={i}
-          className={`flex justify-center items-center w-[50px] h-[50px] border border-orange-400 ${grid.active ? "bg-orange-400" : ""}`}
-          onClick={() => handleClickCell(grid.position)}
+          className={`flex justify-center items-center w-[50px] h-[50px] border border-orange-400`}
+          onClick={() => handleClick(grid.position)}
         >
-          {grid.active} {grid.position}
+          {!grid.activated ? "X" : (grid.nearPumpkins ?? "")}
         </div>
       ))}
     </div>
