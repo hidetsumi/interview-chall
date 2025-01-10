@@ -70,32 +70,53 @@ export const Booscaminas = ({
     [gridDimension],
   );
 
-  function handleClick(position: number) {
-    // if (!initialGameState.pumpkins.includes(position)) {
-    // }
+  // TODO: Remove more params and dependencies to improve simplicity.
+  function revealCell(
+    pos: number,
+    gameState: Casilla[],
+    pumpkins: number[],
+    getSurroundingCells: (position: number) => number[],
+    visited = new Set<number>(),
+  ): Casilla[] {
+    if (visited.has(pos)) return gameState;
 
-    const newCells = { ...gameState };
+    visited.add(pos);
+    const surroundingCells = getSurroundingCells(pos);
+    const nearPumpkins = surroundingCells.filter((cell) => pumpkins.includes(cell));
 
-    function revealCell(pos: number, visited = new Set<number>(), grid: typeof initialGameState) {
-      if (visited.has(pos)) return;
-      visited.add(pos);
+    const newGameState = [...gameState];
 
-      const surroundingCells = getSurroundingCells(pos);
-      const nearPumpkins = surroundingCells.filter((cell) => gameState.pumpkins.includes(cell));
+    newGameState[pos] = {
+      ...newGameState[pos],
+      activated: true,
+      nearPumpkins: nearPumpkins.length,
+    };
 
-      grid.initialGameState[pos] = {
-        ...grid.initialGameState[pos],
-        activated: true,
-        nearPumpkins: nearPumpkins.length,
-      };
-
-      if (!nearPumpkins.length) {
-        surroundingCells.forEach((cell) => revealCell(cell, visited, newCells));
-      }
+    if (!nearPumpkins.length) {
+      surroundingCells.forEach((cell) => {
+        newGameState.splice(
+          0,
+          newGameState.length,
+          ...revealCell(cell, newGameState, pumpkins, getSurroundingCells, visited),
+        );
+      });
     }
 
-    revealCell(position);
-    setGameState(newCells);
+    return newGameState;
+  }
+
+  function handleClick(position: number) {
+    const newState = revealCell(
+      position,
+      gameState.initialGameState,
+      gameState.pumpkins,
+      getSurroundingCells,
+    );
+
+    setGameState({
+      ...gameState,
+      initialGameState: newState,
+    });
   }
 
   return (
