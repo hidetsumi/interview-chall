@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-interface Casilla {
+import { Cell } from "./Cell";
+
+export interface Casilla {
   position: number;
   isPumpkin: boolean;
   activated: boolean;
@@ -25,7 +27,7 @@ export const Booscaminas = ({
 
     const initialGameState = new Array(gridDimension * gridDimension)
       .fill(0)
-      .map((grid, position) => ({
+      .map((_, position) => ({
         position,
         isPumpkin: pumpkinsInitialState.includes(position),
         activated: false,
@@ -106,29 +108,30 @@ export const Booscaminas = ({
   }
 
   function handleClick(position: number) {
-    const newState = revealCell(
-      position,
-      gameState.initialGameState,
-      gameState.pumpkins,
-      getSurroundingCells,
-    );
+    console.log(position);
+    if (!gameState.pumpkins.includes(position)) {
+      const newStateGrid = revealCell(
+        position,
+        gameState.initialGameState,
+        gameState.pumpkins,
+        getSurroundingCells,
+      );
 
-    setGameState({
-      ...gameState,
-      initialGameState: newState,
-    });
+      setGameState({
+        ...gameState,
+        initialGameState: newStateGrid,
+      });
+    } else {
+      const gameOverSound = new Audio("../../public/boo.mp3");
+
+      gameOverSound.play();
+    }
   }
 
   return (
     <div className={`grid grid-cols-${gridDimension} gap-1`}>
-      {gameState.initialGameState.map((grid, i) => (
-        <div
-          key={i}
-          className={`flex justify-center items-center w-[50px] h-[50px] border border-orange-400`}
-          onClick={() => handleClick(grid.position)}
-        >
-          {!grid.activated ? "X" : (grid.nearPumpkins ?? "")}
-        </div>
+      {gameState.initialGameState.map((cell) => (
+        <Cell cellInfo={cell} onClick={handleClick} />
       ))}
     </div>
   );
