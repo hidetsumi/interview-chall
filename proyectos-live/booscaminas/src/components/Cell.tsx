@@ -1,10 +1,10 @@
-import { memo } from "react";
+import React, { memo } from "react";
 
 import { Casilla } from "./Booscaminas";
 
 interface CellProps {
   cellInfo: Casilla;
-  onClick: (position: number) => void;
+  onClick: (position: number, e: React.MouseEvent<HTMLDivElement>) => void;
 }
 export const Cell = memo(
   ({ cellInfo: { activated, nearPumpkins, position, isPumpkin }, onClick }: CellProps) => {
@@ -24,7 +24,8 @@ export const Cell = memo(
         aria-label={`Cell ${position}`}
         className={cellClasses}
         role="button"
-        onClick={() => onClick(position)}
+        onClick={(e) => onClick(position, e)}
+        onContextMenu={(e) => onClick(position, e)}
       >
         {!activated ? "X" : (nearPumpkins ?? "")}
       </div>
