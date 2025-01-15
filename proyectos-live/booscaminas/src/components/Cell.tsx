@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, MouseEvent, useCallback } from "react";
 
 import { Casilla } from "./Booscaminas";
 
@@ -19,13 +19,20 @@ export const Cell = memo(
     transition-colors
   `;
 
+    const handleClick = useCallback(
+      (e: MouseEvent<HTMLDivElement>) => {
+        onClick(position, e);
+      },
+      [position, onClick],
+    );
+
     return (
       <div
         aria-label={`Cell ${position}`}
         className={cellClasses}
         role="button"
-        onClick={(e) => onClick(position, e)}
-        onContextMenu={(e) => onClick(position, e)}
+        onClick={handleClick}
+        onContextMenu={handleClick}
       >
         {!activated ? "X" : (nearPumpkins ?? "")}
       </div>
