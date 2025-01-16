@@ -17,7 +17,7 @@ function App() {
       <section className="flex py-8 justify-center">
         <div className="flex flex-col justify-center w-fit">
           <input onChange={handleGridDimension} />
-          <Booscaminas enableFlags={false} gridDimension={gridDimension || 10} pumpkins={20} />
+          <Booscaminas enableFlags={true} gridDimension={gridDimension || 10} pumpkins={20} />
         </div>
       </section>
       <footer className="text-center leading-[3rem] opacity-70">

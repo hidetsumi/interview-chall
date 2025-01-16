@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Casilla } from "../components/Booscaminas";
 
@@ -8,42 +8,34 @@ interface Props {
   enableFlags: boolean;
 }
 
+interface GameState {
+  gridState: Casilla[];
+  pumpkins: number[];
+}
+
+// Estas funciones van fuera ya que no dependen del estado ni props del hook
+const createPumpkinsPositions = (totalCells: number, pumpkinsCount: number): number[] => {
+  return [...Array(totalCells).keys()].sort(() => Math.random() - 0.5).slice(0, pumpkinsCount);
+};
+
+const createCell = (position: number, pumpkinsPositions: number[]): Casilla => ({
+  position,
+  isPumpkin: pumpkinsPositions.includes(position),
+  activated: false,
+  nearPumpkins: 0,
+  flagged: false,
+});
+
 export const useBooscaminas = ({
   gridDimension = 10,
   pumpkins = 20,
-  enableFlags = false,
+  enableFlags = true,
 }: Props) => {
-  const initialGameState = useMemo(() => {
-    const pumpkinsInitialState = [...Array(Math.pow(gridDimension, 2)).keys()]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, pumpkins);
+  const totalCells = useMemo(() => Math.pow(gridDimension, 2), [gridDimension]);
 
-    const gridState = new Array(gridDimension * gridDimension).fill(0).map((_, position) => ({
-      position,
-      isPumpkin: pumpkinsInitialState.includes(position),
-      activated: false,
-      nearPumpkins: 0,
-      flagged: false,
-    }));
-
-    return { gridState, pumpkins: pumpkinsInitialState };
-  }, [gridDimension, pumpkins]);
-
-  const [gameState, setGameState] = useState<{ gridState: Casilla[]; pumpkins: number[] }>(
-    initialGameState,
-  );
-
-  useEffect(() => {
-    setGameState(initialGameState);
-  }, [initialGameState]);
-
-  function revealCell(
-    pos: number,
-    gameState: Casilla[],
-    pumpkins: number[],
-    visited = new Set<number>(),
-  ): Casilla[] {
-    function getSurroundingCells(position: number) {
+  // Memoizamos getSurroundingCells ya que solo depende de gridDimension
+  const getSurroundingCells = useCallback(
+    (position: number) => {
       const row = Math.floor(position / gridDimension);
       const col = position % gridDimension;
 
@@ -64,62 +56,121 @@ export const useBooscaminas = ({
       }
 
       return surrounding;
-    }
+    },
+    [gridDimension],
+  );
 
-    if (visited.has(pos)) return gameState;
+  const createInitialState = useCallback((): GameState => {
+    const pumpkinsPositions = createPumpkinsPositions(totalCells, pumpkins);
+    const gridState = Array.from({ length: totalCells }, (_, position) =>
+      createCell(position, pumpkinsPositions),
+    );
 
-    visited.add(pos);
-    const surroundingCells = getSurroundingCells(pos);
-    const nearPumpkins = surroundingCells.filter((cell) => pumpkins.includes(cell));
-
-    const newGameState = [...gameState];
-
-    newGameState[pos] = {
-      ...newGameState[pos],
-      activated: true,
-      nearPumpkins: nearPumpkins.length,
+    return {
+      gridState,
+      pumpkins: pumpkinsPositions,
     };
+  }, [totalCells, pumpkins]);
 
-    if (!nearPumpkins.length) {
-      surroundingCells.forEach((cell) => {
-        newGameState.splice(
-          0,
-          newGameState.length,
-          ...revealCell(cell, newGameState, pumpkins, visited),
-        );
-      });
-    }
+  const [gameState, setGameState] = useState<GameState>(createInitialState);
 
-    return newGameState;
-  }
+  // Memoizamos revealCell ya que es una función compleja
+  const revealCell = useCallback(
+    (
+      pos: number,
+      currentGameState: Casilla[],
+      pumpkins: number[],
+      visited = new Set<number>(),
+    ): Casilla[] => {
+      // Si ya visitamos esta celda, retornamos el estado sin cambios
+      if (visited.has(pos)) return currentGameState;
 
-  const flagCell = (
-    position: number,
-    gameState: typeof initialGameState.gridState,
-  ): typeof initialGameState.gridState => {
-    return gameState.map((cell, i) =>
+      // Marcamos como visitada
+      visited.add(pos);
+
+      // Obtenemos las celdas adyacentes y contamos las bombas
+      const surroundingCells = getSurroundingCells(pos);
+      const nearPumpkins = surroundingCells.filter((cell) => pumpkins.includes(cell));
+
+      // Creamos una copia del estado
+      let newState = [...currentGameState];
+
+      // Activamos la celda actual
+      newState = newState.map((cell, index) =>
+        index === pos
+          ? {
+              ...cell,
+              activated: true,
+              nearPumpkins: nearPumpkins.length,
+            }
+          : cell,
+      );
+
+      // Si no hay bombas cercanas, revelamos las celdas adyacentes
+      if (nearPumpkins.length === 0) {
+        surroundingCells.forEach((cellPos) => {
+          // Solo si no está ya activada
+          if (!newState[cellPos].activated) {
+            newState = revealCell(cellPos, newState, pumpkins, visited);
+          }
+        });
+      }
+
+      return newState;
+    },
+    [getSurroundingCells],
+  );
+
+  // Memoizamos flagCell
+  const flagCell = useCallback((position: number, currentGameState: Casilla[]): Casilla[] => {
+    return currentGameState.map((cell, i) =>
       i === position ? { ...cell, flagged: !cell.flagged } : cell,
     );
-  };
+  }, []);
 
-  const handleClick = (position: number, e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (!gameState.pumpkins.includes(position)) {
+  // Memoizamos el audio
+  const playGameOverSound = useCallback(() => {
+    const gameOverSound = new Audio("../../public/boo.mp3");
+
+    return gameOverSound.play();
+  }, []);
+
+  // Memoizamos handleClick
+  const handleClick = useCallback(
+    (position: number, e: React.MouseEvent<HTMLDivElement>) => {
+      e.preventDefault();
+
       const flagClick = e.nativeEvent.button === 2;
-      const newStateGrid = !flagClick
-        ? revealCell(position, gameState.gridState, gameState.pumpkins)
-        : flagCell(position, gameState.gridState);
 
-      setGameState({
-        ...gameState,
-        gridState: newStateGrid,
-      });
-    } else {
-      const gameOverSound = new Audio("../../public/boo.mp3");
+      const selectedHavePumpkin = gameState.pumpkins.includes(position);
 
-      gameOverSound.play();
-    }
+      // GAME OVER
+      selectedHavePumpkin && !flagClick && playGameOverSound();
+
+      if (!selectedHavePumpkin || flagClick) {
+        setGameState((prev) => ({
+          ...prev,
+          gridState:
+            flagClick && enableFlags
+              ? flagCell(position, prev.gridState)
+              : prev.gridState[position].flagged
+                ? prev.gridState
+                : revealCell(position, prev.gridState, prev.pumpkins),
+        }));
+      }
+    },
+    [gameState.pumpkins, enableFlags, revealCell, flagCell, playGameOverSound],
+  );
+
+  console.log(gameState);
+  // Añadimos reset por si lo necesitas
+  const resetGame = useCallback(() => {
+    setGameState(createInitialState());
+  }, [createInitialState]);
+
+  return {
+    gameState,
+    handleClick,
+    resetGame, // Exportamos reset por si lo necesitas
   };
-
-  return { gameState, handleClick };
 };

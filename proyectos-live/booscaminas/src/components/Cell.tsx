@@ -1,30 +1,30 @@
-import React, { memo, MouseEvent, useCallback } from "react";
+import type { Casilla } from "./Booscaminas";
 
-import { Casilla } from "./Booscaminas";
+import React, { memo, useMemo } from "react";
 
 interface CellProps {
   cellInfo: Casilla;
   onClick: (position: number, e: React.MouseEvent<HTMLDivElement>) => void;
 }
+
 export const Cell = memo(
-  ({ cellInfo: { activated, nearPumpkins, position, isPumpkin }, onClick }: CellProps) => {
-    // Optional: Add dynamic classes based on state
-    const cellClasses = `
+  ({ cellInfo: { activated, nearPumpkins, position, isPumpkin, flagged }, onClick }: CellProps) => {
+    const cellClasses = useMemo(
+      () => `
     flex justify-center items-center
-    w-[50px] h-[50px]
+    w-12 h-12
     border border-orange-400
     ${activated ? "bg-orange-100" : "hover:bg-orange-50"}
     ${isPumpkin && activated ? "bg-red-200" : ""}
     cursor-pointer
     transition-colors
-  `;
-
-    const handleClick = useCallback(
-      (e: MouseEvent<HTMLDivElement>) => {
-        onClick(position, e);
-      },
-      [position, onClick],
+  `,
+      [activated, isPumpkin],
     );
+
+    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      onClick(position, e);
+    };
 
     return (
       <div
@@ -34,8 +34,18 @@ export const Cell = memo(
         onClick={handleClick}
         onContextMenu={handleClick}
       >
-        {!activated ? "X" : (nearPumpkins ?? "")}
+        {!activated ? (flagged ? "🚩" : "🎃") : (nearPumpkins ?? "")}
       </div>
     );
   },
+  // (prevProps, nextProps) => {
+  //   // Solo re-renderiza si estos valores cambian
+  //   return (
+  //     prevProps.cellInfo.activated === nextProps.cellInfo.activated &&
+  //     prevProps.cellInfo.flagged === nextProps.cellInfo.flagged &&
+  //     prevProps.cellInfo.nearPumpkins === nextProps.cellInfo.nearPumpkins
+  //   );
+  // },
 );
+
+Cell.displayName = "Cell"; // Ayuda en DevTools
