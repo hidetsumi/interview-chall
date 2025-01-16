@@ -33,6 +33,8 @@ export const useBooscaminas = ({
 }: Props) => {
   const totalCells = useMemo(() => Math.pow(gridDimension, 2), [gridDimension]);
 
+  console.log(totalCells, gridDimension);
+
   // Memoizamos getSurroundingCells ya que solo depende de gridDimension
   const getSurroundingCells = useCallback(
     (position: number) => {
@@ -162,7 +164,6 @@ export const useBooscaminas = ({
     [gameState.pumpkins, enableFlags, revealCell, flagCell, playGameOverSound],
   );
 
-  console.log(gameState);
   // Añadimos reset por si lo necesitas
   const resetGame = useCallback(() => {
     setGameState(createInitialState());
