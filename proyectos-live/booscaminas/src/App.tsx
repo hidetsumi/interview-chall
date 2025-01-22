@@ -11,12 +11,32 @@ function App() {
     }
   };
 
+  const handleClickCommonValues = (dimension: number) => {
+    setGridDimension(dimension);
+  };
+
+  const mostCommonPumpkins = [5, 7, 10];
+
   return (
     <main className="container m-auto grid min-h-screen grid-rows-[auto,1fr,auto] px-4">
       <header className="text-xl font-bold leading-[3rem]">booscaminas</header>
       <section className="flex py-8 justify-center">
-        <div className="flex flex-col justify-center w-fit">
+        <div className="flex flex-col justify-center w-fit gap-1">
           <input onChange={handleGridDimension} />
+          <div className="group flex flex-row gap-2">
+            <div className="flex w-16 h-12 border border-orange-600 justify-center items-center">
+              🟧
+            </div>
+            {mostCommonPumpkins.map((gridDimension) => (
+              <div
+                key={gridDimension}
+                className="opacity-0 flex justify-center p-2 px-8 w-fit bg-slate-400 rounded-sm group-hover:opacity-100 transition-opacity ease-in-out  duration-200"
+                onClick={() => handleClickCommonValues(gridDimension)}
+              >
+                {gridDimension}
+              </div>
+            ))}
+          </div>
           <Booscaminas enableFlags={true} gridDimension={gridDimension || 10} pumpkins={20} />
         </div>
       </section>

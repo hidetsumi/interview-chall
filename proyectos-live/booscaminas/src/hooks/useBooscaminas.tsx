@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Casilla } from "../components/Booscaminas";
 
@@ -33,9 +33,6 @@ export const useBooscaminas = ({
 }: Props) => {
   const totalCells = useMemo(() => Math.pow(gridDimension, 2), [gridDimension]);
 
-  console.log(totalCells, gridDimension);
-
-  // Memoizamos getSurroundingCells ya que solo depende de gridDimension
   const getSurroundingCells = useCallback(
     (position: number) => {
       const row = Math.floor(position / gridDimension);
@@ -76,7 +73,6 @@ export const useBooscaminas = ({
 
   const [gameState, setGameState] = useState<GameState>(createInitialState);
 
-  // Memoizamos revealCell ya que es una función compleja
   const revealCell = useCallback(
     (
       pos: number,
@@ -168,6 +164,10 @@ export const useBooscaminas = ({
   const resetGame = useCallback(() => {
     setGameState(createInitialState());
   }, [createInitialState]);
+
+  useEffect(() => {
+    resetGame();
+  }, [gridDimension, resetGame]);
 
   return {
     gameState,
