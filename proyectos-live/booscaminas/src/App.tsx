@@ -11,12 +11,6 @@ function App() {
     }
   };
 
-  const handleClickCommonValues = (dimension: number) => {
-    setGridDimension(dimension);
-  };
-
-  const mostCommonPumpkins = [5, 7, 10];
-
   return (
     <main className="container m-auto grid min-h-screen grid-rows-[auto,1fr,auto] px-4">
       <header className="text-xl font-bold leading-[3rem]">booscaminas</header>
@@ -27,15 +21,6 @@ function App() {
             <div className="flex w-16 h-12 border border-orange-600 justify-center items-center">
               🟧
             </div>
-            {mostCommonPumpkins.map((gridDimension) => (
-              <div
-                key={gridDimension}
-                className="opacity-0 flex justify-center p-2 px-8 w-fit bg-slate-400 rounded-sm group-hover:opacity-100 transition-opacity ease-in-out  duration-200"
-                onClick={() => handleClickCommonValues(gridDimension)}
-              >
-                {gridDimension}
-              </div>
-            ))}
           </div>
           <Booscaminas enableFlags={true} gridDimension={gridDimension || 10} pumpkins={20} />
         </div>

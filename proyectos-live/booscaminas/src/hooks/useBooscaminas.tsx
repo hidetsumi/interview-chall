@@ -165,6 +165,20 @@ export const useBooscaminas = ({
     setGameState(createInitialState());
   }, [createInitialState]);
 
+  const mostCommonPumpkins = [5, 7, 10];
+
+  const GridSizeSelector = () => {
+    return mostCommonPumpkins.map((gridDimension) => (
+      <div
+        key={gridDimension}
+        className="opacity-0 flex justify-center p-2 px-8 w-fit bg-slate-400 rounded-sm group-hover:opacity-100 transition-opacity ease-in-out  duration-200"
+        onClick={() => handleClickCommonValues(gridDimension)}
+      >
+        {gridDimension}
+      </div>
+    ));
+  };
+
   useEffect(() => {
     resetGame();
   }, [gridDimension, resetGame]);
@@ -173,5 +187,6 @@ export const useBooscaminas = ({
     gameState,
     handleClick,
     resetGame, // Exportamos reset por si lo necesitas
+    GridSizeSelector,
   };
 };
