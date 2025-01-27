@@ -38,14 +38,6 @@ export const Cell = memo(
       </div>
     );
   },
-  // (prevProps, nextProps) => {
-  //   // Solo re-renderiza si estos valores cambian
-  //   return (
-  //     prevProps.cellInfo.activated === nextProps.cellInfo.activated &&
-  //     prevProps.cellInfo.flagged === nextProps.cellInfo.flagged &&
-  //     prevProps.cellInfo.nearPumpkins === nextProps.cellInfo.nearPumpkins
-  //   );
-  // },
 );
 
 Cell.displayName = "Cell"; // Ayuda en DevTools

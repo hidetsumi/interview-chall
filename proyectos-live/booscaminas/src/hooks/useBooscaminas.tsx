@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Casilla } from "../components/Booscaminas";
 
 interface Props {
-  gridDimension: number;
   pumpkins: number;
   enableFlags: boolean;
 }
@@ -26,17 +25,13 @@ const createCell = (position: number, pumpkinsPositions: number[]): Casilla => (
   flagged: false,
 });
 
-export const useBooscaminas = ({
-  gridDimension = 10,
-  pumpkins = 20,
-  enableFlags = true,
-}: Props) => {
-  const totalCells = useMemo(() => Math.pow(gridDimension, 2), [gridDimension]);
+export const useBooscaminas = ({ pumpkins = 20, enableFlags = true }: Props) => {
+  const DEFAULT_GRID_DIMENSION = 10;
 
   const getSurroundingCells = useCallback(
     (position: number) => {
-      const row = Math.floor(position / gridDimension);
-      const col = position % gridDimension;
+      const row = Math.floor(position / DEFAULT_GRID_DIMENSION);
+      const col = position % DEFAULT_GRID_DIMENSION;
 
       const surrounding = [];
 
@@ -46,9 +41,14 @@ export const useBooscaminas = ({
 
           const newRow = row + i;
           const newCol = col + j;
-          const newPos = newRow * gridDimension + newCol;
+          const newPos = newRow * DEFAULT_GRID_DIMENSION + newCol;
 
-          if (newRow >= 0 && newRow < gridDimension && newCol >= 0 && newCol < gridDimension) {
+          if (
+            newRow >= 0 &&
+            newRow < DEFAULT_GRID_DIMENSION &&
+            newCol >= 0 &&
+            newCol < DEFAULT_GRID_DIMENSION
+          ) {
             surrounding.push(newPos);
           }
         }
@@ -56,20 +56,25 @@ export const useBooscaminas = ({
 
       return surrounding;
     },
-    [gridDimension],
+    [DEFAULT_GRID_DIMENSION],
   );
 
-  const createInitialState = useCallback((): GameState => {
-    const pumpkinsPositions = createPumpkinsPositions(totalCells, pumpkins);
-    const gridState = Array.from({ length: totalCells }, (_, position) =>
-      createCell(position, pumpkinsPositions),
-    );
+  const createInitialState = useCallback(
+    (gridSize?: number): GameState => {
+      const totalCells = Math.pow(gridSize || DEFAULT_GRID_DIMENSION, 2);
 
-    return {
-      gridState,
-      pumpkins: pumpkinsPositions,
-    };
-  }, [totalCells, pumpkins]);
+      const pumpkinsPositions = createPumpkinsPositions(totalCells, pumpkins);
+      const gridState = Array.from({ length: totalCells }, (_, position) =>
+        createCell(position, pumpkinsPositions),
+      );
+
+      return {
+        gridState,
+        pumpkins: pumpkinsPositions,
+      };
+    },
+    [pumpkins, DEFAULT_GRID_DIMENSION],
+  );
 
   const [gameState, setGameState] = useState<GameState>(createInitialState);
 
@@ -167,21 +172,40 @@ export const useBooscaminas = ({
 
   const mostCommonPumpkins = [5, 7, 10];
 
+  const handleClickCommonValues = (dimension: number) => {
+    setGameState(createInitialState(dimension));
+  };
+
   const GridSizeSelector = () => {
-    return mostCommonPumpkins.map((gridDimension) => (
-      <div
-        key={gridDimension}
-        className="opacity-0 flex justify-center p-2 px-8 w-fit bg-slate-400 rounded-sm group-hover:opacity-100 transition-opacity ease-in-out  duration-200"
-        onClick={() => handleClickCommonValues(gridDimension)}
-      >
-        {gridDimension}
+    return (
+      <div className="group flex flex-row gap-2">
+        <div className="flex w-16 h-12 border border-orange-600 justify-center items-center">
+          🟧
+        </div>
+        {mostCommonPumpkins.map((DEFAULT_GRID_DIMENSION) => (
+          <div
+            key={DEFAULT_GRID_DIMENSION}
+            className="opacity-0 flex justify-center p-2 px-8 w-fit bg-slate-400 rounded-sm group-hover:opacity-100 transition-opacity ease-in-out  duration-200"
+            onClick={() => handleClickCommonValues(DEFAULT_GRID_DIMENSION)}
+          >
+            {DEFAULT_GRID_DIMENSION}
+          </div>
+        ))}
       </div>
-    ));
+    );
   };
 
   useEffect(() => {
     resetGame();
-  }, [gridDimension, resetGame]);
+  }, [DEFAULT_GRID_DIMENSION, resetGame]);
+
+  const WIN_CONDITION = useMemo(() => {
+    return (
+      pumpkins - gameState.gridState.filter((grid) => grid.activated && !grid.isPumpkin).length
+    );
+  }, [pumpkins, gameState]);
+
+  console.log(WIN_CONDITION);
 
   return {
     gameState,

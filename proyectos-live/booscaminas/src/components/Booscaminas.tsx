@@ -16,14 +16,22 @@ interface BooscaminasProp {
   enableFlags: boolean;
 }
 
-export const Booscaminas = ({ pumpkins, enableFlags, gridDimension }: BooscaminasProp) => {
-  const { gameState, handleClick } = useBooscaminas({ gridDimension, pumpkins, enableFlags });
+export const Booscaminas = ({ pumpkins, enableFlags }: BooscaminasProp) => {
+  const { gameState, handleClick, GridSizeSelector } = useBooscaminas({
+    pumpkins,
+    enableFlags,
+  });
+
+  const gridDimension = Math.sqrt(gameState.gridState.length);
 
   return (
-    <div className={`grid grid-cols-${gridDimension} gap-1`}>
-      {gameState.gridState.map((cell) => (
-        <Cell key={cell.position} cellInfo={cell} onClick={handleClick} />
-      ))}
+    <div>
+      {GridSizeSelector()}
+      <div className={`grid grid-cols-${gridDimension} gap-1`}>
+        {gameState.gridState.map((cell) => (
+          <Cell key={cell.position} cellInfo={cell} onClick={handleClick} />
+        ))}
+      </div>
     </div>
   );
 };
